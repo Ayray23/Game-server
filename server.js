@@ -5,19 +5,23 @@ const { Server } = require('socket.io');
 
 const app = express();
 
-// Corrected CORS to remove trailing slash
+const allowedOrigins = [
+  "https://game-app-eight-lilac.vercel.app", // your frontend live URL
+  "http://localhost:5174" // for local testing
+];
+
 app.use(cors({
-  origin: "https://game-app-eight-lilac.vercel.app", // No slash
-  methods: ["GET", "POST"]
+  origin: allowedOrigins,
+  credentials: true
 }));
 
 const server = http.createServer(app);
 
-// Updated CORS config for socket.io
 const io = new Server(server, {
   cors: {
-    origin: "https://game-app-eight-lilac.vercel.app", // No slash
-    methods: ["GET", "POST"]
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
@@ -39,30 +43,24 @@ io.on('connection', (socket) => {
     socket.emit('room-full');
   }
 
-  // Send current game state
   socket.emit('game-state', { board, currentTurn });
 
-  // Handle moves
   socket.on('make-move', (index) => {
     if (board[index] || socket.id !== players[currentTurn]) return;
 
     board[index] = currentTurn;
     currentTurn = currentTurn === 'X' ? 'O' : 'X';
-
     io.emit('game-state', { board, currentTurn });
   });
 
-  // Reset game
   socket.on('reset-game', () => {
     board = Array(9).fill(null);
     currentTurn = 'X';
     io.emit('game-state', { board, currentTurn });
   });
 
-  // Handle disconnect
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
-
     if (players.X === socket.id) delete players.X;
     if (players.O === socket.id) delete players.O;
 
@@ -72,8 +70,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// Start server
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(Server running on port ${PORT});
 });
