@@ -4,18 +4,17 @@ const cors = require('cors');
 const { Server } = require('socket.io');
 
 const app = express();
+const server = http.createServer(app);
 
 const allowedOrigins = [
-  "https://game-app-eight-lilac.vercel.app", // your frontend live URL
-  "http://localhost:5174" // for local testing
+  "http://localhost:5174",
+  "https://game-app-eight-lilac.vercel.app"
 ];
 
 app.use(cors({
   origin: allowedOrigins,
   credentials: true
 }));
-
-const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
@@ -32,7 +31,6 @@ let board = Array(9).fill(null);
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Assign player
   if (!players.X) {
     players.X = socket.id;
     socket.emit('player-assigned', 'X');
@@ -41,6 +39,7 @@ io.on('connection', (socket) => {
     socket.emit('player-assigned', 'O');
   } else {
     socket.emit('room-full');
+    return;
   }
 
   socket.emit('game-state', { board, currentTurn });
@@ -50,6 +49,7 @@ io.on('connection', (socket) => {
 
     board[index] = currentTurn;
     currentTurn = currentTurn === 'X' ? 'O' : 'X';
+
     io.emit('game-state', { board, currentTurn });
   });
 
@@ -61,6 +61,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+
     if (players.X === socket.id) delete players.X;
     if (players.O === socket.id) delete players.O;
 
