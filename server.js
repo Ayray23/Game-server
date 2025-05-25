@@ -1,18 +1,22 @@
-
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const { Server } = require('socket.io');
 
 const app = express();
-app.use(cors()); // Allow frontend to connect
+
+// Corrected CORS to remove trailing slash
+app.use(cors({
+  origin: "https://game-app-eight-lilac.vercel.app", // No slash
+  methods: ["GET", "POST"]
+}));
 
 const server = http.createServer(app);
 
-// Create the socket server
+// Updated CORS config for socket.io
 const io = new Server(server, {
   cors: {
-    origin: "https://game-app-eight-lilac.vercel.app/", // Frontend URL
+    origin: "https://game-app-eight-lilac.vercel.app", // No slash
     methods: ["GET", "POST"]
   }
 });
@@ -21,7 +25,6 @@ let players = {};
 let currentTurn = 'X';
 let board = Array(9).fill(null);
 
-// Handle socket connections
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
@@ -56,7 +59,7 @@ io.on('connection', (socket) => {
     io.emit('game-state', { board, currentTurn });
   });
 
-  // Disconnect
+  // Handle disconnect
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
 
